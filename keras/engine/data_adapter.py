@@ -816,10 +816,29 @@ class GeneratorDataAdapter(DataAdapter):
 
     self._first_batch_size = int(tf.nest.flatten(peek)[0].shape[0])
 
-    def _get_tensor_spec(t):
-      return type_spec.type_spec_from_value(t)._with_tensor_ranks_only()  # pylint: disable=protected-access
+    def _rankless_shape(shape):
+      if shape.rank is not None:
+        shape = tf.TensorShape([None for _ in shape.as_list()])
+      return shape
 
-    output_signature = tf.nest.map_structure(_get_tensor_spec, peek)
+    def _rankless_attribute(attribute):
+      if isinstance(attribute, tf.TensorShape):
+        return _rankless_shape(attribute)
+      elif isinstance(attribute, tf.TensorSpec):
+        return tf.TensorSpec(
+            shape=_rankless_shape(attribute.shape), dtype=attribute.dtype)
+      else:
+        return attribute
+
+    def _without_ranks(spec):
+      # pylint: disable=protected-access
+      return spec._deserialize(
+          tf.nest.map_structure(_rankless_attribute, spec._serialize()))
+
+    def _get_type_spec(t):
+      return _without_ranks(type_spec.type_spec_from_value(t))
+
+    output_signature = tf.nest.map_structure(_get_type_spec, peek)
 
     # Note that dataset API takes a callable that creates a generator object,
     # rather than generator itself, which is why we define a function here.
