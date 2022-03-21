@@ -230,6 +230,7 @@ py_library(
     ],
     srcs_version = "PY3",
     deps = [
+        "//:expect_pillow_installed",
         "//:expect_tensorflow_installed",
     ],
 )
@@ -253,10 +254,10 @@ py_library(
     ],
     srcs_version = "PY3",
     deps = [
+        ":image_utils",
         "//:expect_numpy_installed",
         "//:expect_tensorflow_installed",
         "//keras/layers/preprocessing:image_preprocessing",
-        "//keras/preprocessing:image",
     ],
 )
 
